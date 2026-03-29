@@ -83,6 +83,7 @@ export const useStore = create<AppState>((set, get) => ({
       type: 'textBox',
       position: position || { x: Math.random() * 400 + 100, y: Math.random() * 400 + 100 },
       data: { label: 'Text', content: '', images: [] },
+      style: { width: 300, height: 150 },
     };
     set({ nodes: [...get().nodes, newNode] });
     get().debouncedSave();
@@ -103,6 +104,7 @@ export const useStore = create<AppState>((set, get) => ({
         isStreaming: false,
         images: [],
       },
+      style: { width: 350, height: 400 },
     };
     set({ nodes: [...get().nodes, newNode] });
     get().debouncedSave();
@@ -148,6 +150,9 @@ export const useStore = create<AppState>((set, get) => ({
             isStreaming: false,
             images: [],
           },
+      style: source.type === 'textBox'
+        ? { width: 300, height: 150 }
+        : { width: 350, height: 400 },
     };
 
     const newEdge: Edge = {

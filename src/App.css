@@ -113,7 +113,6 @@
   border: 2px solid #b8d4e3;
   min-width: 280px;
   min-height: 200px;
-  height: 400px;
   display: flex;
   flex-direction: column;
 }
