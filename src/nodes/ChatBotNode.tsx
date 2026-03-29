@@ -1,6 +1,6 @@
 import { memo, useCallback, useState, useEffect, useRef } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { ChatBotData, AIProvider, ImageAttachment } from '../types';
+import type { ChatBotData, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
 import { uploadImage } from '../lib/api';
 import { getImagesFromClipboard } from '../lib/imageUtils';
@@ -33,25 +33,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
       }
     },
     [handleSend]
-  );
-
-  const handleProviderChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const provider = e.target.value as AIProvider;
-      updateNodeData(id, {
-        provider,
-        label: provider === 'claude' ? 'Claude' : 'Codex',
-        model: provider === 'claude' ? 'claude-sonnet-4-6' : 'o3',
-      });
-    },
-    [id, updateNodeData]
-  );
-
-  const handleModelChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      updateNodeData(id, { model: e.target.value });
-    },
-    [id, updateNodeData]
   );
 
   const handleImageUpload = useCallback(
@@ -95,10 +76,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
     [id, forkNode]
   );
 
-  const claudeModels = ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5-20251001'];
-  const codexModels = ['o3', 'gpt-4o', 'o4-mini', 'codex-mini'];
-  const models = nodeData.provider === 'claude' ? claudeModels : codexModels;
-
   return (
     <div className="node-container chat-node">
       <Handle type="target" position={Position.Top} />
@@ -110,26 +87,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
       >
         ×
       </button>
-
-      <div className="chat-controls nodrag">
-        <select
-          className="provider-select"
-          value={nodeData.provider}
-          onChange={handleProviderChange}
-        >
-          <option value="claude">Claude</option>
-          <option value="codex">Codex</option>
-        </select>
-        <select
-          className="model-select"
-          value={nodeData.model}
-          onChange={handleModelChange}
-        >
-          {models.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-      </div>
 
       <div className="chat-messages nodrag nopan nowheel">
         {nodeData.messages.length === 0 && (
@@ -170,17 +127,10 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          placeholder="Type a message..."
+          placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
           rows={2}
           disabled={nodeData.isStreaming}
         />
-        <button
-          className="send-btn"
-          onClick={handleSend}
-          disabled={nodeData.isStreaming || !input.trim()}
-        >
-          {nodeData.isStreaming ? '...' : '->'}
-        </button>
       </div>
 
       <div onClickCapture={handleSourceHandleClick}>
