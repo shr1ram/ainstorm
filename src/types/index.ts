@@ -3,13 +3,15 @@ import type { Node, Edge } from '@xyflow/react';
 export interface ImageAttachment {
   id: string;
   filename: string;
-  path: string; // relative path in data/images/
+  path: string;
+  [key: string]: unknown;
 }
 
 export interface TextBoxData {
   label: string;
   content: string;
   images: ImageAttachment[];
+  [key: string]: unknown;
 }
 
 export interface ChatMessage {
@@ -18,6 +20,7 @@ export interface ChatMessage {
   content: string;
   images?: ImageAttachment[];
   timestamp: number;
+  [key: string]: unknown;
 }
 
 export type AIProvider = 'claude' | 'codex';
@@ -32,7 +35,8 @@ export interface ChatBotData {
   messages: ChatMessage[];
   isStreaming: boolean;
   images: ImageAttachment[];
-  sessionId?: string; // for claude --resume
+  sessionId?: string;
+  [key: string]: unknown;
 }
 
 export interface FileAttachment {
@@ -42,11 +46,13 @@ export interface FileAttachment {
   type: 'pdf' | 'image';
   extractedText?: string;
   size?: number;
+  [key: string]: unknown;
 }
 
 export interface FileBoxData {
   label: string;
   files: FileAttachment[];
+  [key: string]: unknown;
 }
 
 export type TextBoxNode = Node<TextBoxData, 'textBox'>;

@@ -5,7 +5,7 @@ import type { TextBoxData, ChatBotData, FileBoxData } from '../types';
  * Check if adding an edge from source to target would create a cycle.
  */
 export function wouldCreateCycle(
-  nodes: Node[],
+  _nodes: Node[],
   edges: Edge[],
   target: string,
   source: string

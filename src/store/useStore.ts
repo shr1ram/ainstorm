@@ -236,7 +236,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   sendMessage: async (nodeId, content, images) => {
-    const { nodes, edges, updateNodeData } = get();
+    const { nodes, updateNodeData } = get();
     const node = nodes.find((n) => n.id === nodeId);
     if (!node || (node.type !== 'chatBot' && node.type !== 'codeBox')) return;
 
