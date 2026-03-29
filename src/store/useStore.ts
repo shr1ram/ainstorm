@@ -9,7 +9,7 @@ import {
   applyEdgeChanges,
   addEdge,
 } from '@xyflow/react';
-import type { AIProvider, TextBoxData, ChatBotData, ChatMessage, ImageAttachment } from '../types';
+import type { AIProvider, TextBoxData, ChatBotData, FileBoxData, ChatMessage, ImageAttachment } from '../types';
 import { getUpstreamContext } from '../lib/contextPropagation';
 import { wouldCreateCycle } from '../lib/contextPropagation';
 
@@ -30,7 +30,8 @@ interface AppState {
   setDefaultFontSize: (size: number) => void;
   addTextNode: (position?: { x: number; y: number }) => void;
   addChatNode: (position?: { x: number; y: number }) => void;
-  updateNodeData: (nodeId: string, data: Partial<TextBoxData | ChatBotData>) => void;
+  addFileNode: (position?: { x: number; y: number }) => void;
+  updateNodeData: (nodeId: string, data: Partial<TextBoxData | ChatBotData | FileBoxData>) => void;
   deleteNode: (nodeId: string) => void;
   forkNode: (nodeId: string) => void;
   sendMessage: (nodeId: string, content: string, images?: ImageAttachment[]) => Promise<void>;
@@ -126,6 +127,19 @@ export const useStore = create<AppState>((set, get) => ({
     get().debouncedSave();
   },
 
+  addFileNode: (position) => {
+    const id = generateId();
+    const newNode: Node<FileBoxData> = {
+      id,
+      type: 'fileBox',
+      position: position || { x: Math.random() * 400 + 100, y: Math.random() * 400 + 100 },
+      data: { label: 'Files', files: [] },
+      style: { width: 250, height: 200 },
+    };
+    set({ nodes: [...get().nodes, newNode] });
+    get().debouncedSave();
+  },
+
   updateNodeData: (nodeId, data) => {
     set({
       nodes: get().nodes.map((n) =>
@@ -158,6 +172,8 @@ export const useStore = create<AppState>((set, get) => ({
       },
       data: source.type === 'textBox'
         ? { label: 'Text', content: '', images: [] }
+        : source.type === 'fileBox'
+        ? { label: 'Files', files: [] }
         : {
             label: (source.data as ChatBotData).provider === 'claude' ? 'Claude' : 'Codex',
             provider: (source.data as ChatBotData).provider,
@@ -168,6 +184,8 @@ export const useStore = create<AppState>((set, get) => ({
           },
       style: source.type === 'textBox'
         ? { width: 300, height: 150 }
+        : source.type === 'fileBox'
+        ? { width: 250, height: 200 }
         : { width: 350, height: 400 },
     };
 

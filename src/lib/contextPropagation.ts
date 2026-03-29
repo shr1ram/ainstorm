@@ -1,5 +1,5 @@
 import type { Node, Edge } from '@xyflow/react';
-import type { TextBoxData, ChatBotData } from '../types';
+import type { TextBoxData, ChatBotData, FileBoxData } from '../types';
 
 /**
  * Check if adding an edge from source to target would create a cycle.
@@ -87,6 +87,15 @@ export function getUpstreamContext(
           .map((m) => `**${m.role}**: ${m.content}`)
           .join('\n\n');
         contextParts.push(`### ${data.label || 'Chat Node'}\n${conversation}`);
+      }
+    } else if (node.type === 'fileBox') {
+      const data = node.data as FileBoxData;
+      for (const file of data.files || []) {
+        if (file.type === 'pdf' && file.extractedText) {
+          contextParts.push(`### File: ${file.filename}\n${file.extractedText}`);
+        } else if (file.type === 'image') {
+          contextParts.push(`### File: ${file.filename}\n[Image attached]`);
+        }
       }
     }
   }

@@ -3,16 +3,19 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
+// @ts-ignore - pdf-parse has no types
+import pdfParse from 'pdf-parse';
 
 const app = express();
 const PORT = 3001;
 const DATA_DIR = path.join(process.cwd(), 'data');
 const NODES_DIR = path.join(DATA_DIR, 'nodes');
 const IMAGES_DIR = path.join(DATA_DIR, 'images');
+const FILES_DIR = path.join(DATA_DIR, 'files');
 const GRAPH_FILE = path.join(DATA_DIR, 'graph.json');
 
 // Ensure directories exist
-for (const dir of [DATA_DIR, NODES_DIR, IMAGES_DIR]) {
+for (const dir of [DATA_DIR, NODES_DIR, IMAGES_DIR, FILES_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
@@ -39,7 +42,61 @@ app.post('/api/upload-image', upload.single('image'), (req, res) => {
   });
 });
 
-// Serve images
+// File upload (images + PDFs) with PDF text extraction
+const fileStorage = multer.diskStorage({
+  destination: FILES_DIR,
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
+  },
+});
+const fileUpload = multer({ storage: fileStorage, limits: { fileSize: 50 * 1024 * 1024 } });
+
+app.post('/api/upload-file', fileUpload.single('file'), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: 'No file' });
+    return;
+  }
+
+  const isPdf = req.file.mimetype === 'application/pdf' ||
+    req.file.originalname.toLowerCase().endsWith('.pdf');
+  const isImage = req.file.mimetype.startsWith('image/');
+
+  let extractedText: string | undefined;
+
+  if (isPdf) {
+    try {
+      const buffer = fs.readFileSync(req.file.path);
+      const data = await pdfParse(buffer);
+      extractedText = data.text;
+      console.log(`[pdf] Extracted ${extractedText.length} chars from ${req.file.originalname}`);
+    } catch (err) {
+      console.error('[pdf] Extraction failed:', err);
+      extractedText = '[PDF text extraction failed]';
+    }
+  }
+
+  res.json({
+    id: `file-${Date.now()}`,
+    filename: req.file.originalname,
+    path: req.file.filename,
+    type: isPdf ? 'pdf' : isImage ? 'image' : 'image',
+    extractedText,
+    size: req.file.size,
+  });
+});
+
+// Serve files (images + PDFs)
+app.get('/api/file/:filename', (req, res) => {
+  const filepath = path.join(FILES_DIR, req.params.filename);
+  if (!fs.existsSync(filepath)) {
+    res.status(404).send('Not found');
+    return;
+  }
+  res.sendFile(filepath);
+});
+
+// Serve images (legacy)
 app.get('/api/image/:filename', (req, res) => {
   const filepath = path.join(IMAGES_DIR, req.params.filename);
   if (!fs.existsSync(filepath)) {
@@ -126,6 +183,9 @@ app.post('/api/chat', (req, res) => {
   let cmd: string;
   let args: string[];
 
+  // For large system prompts (e.g. with PDF text), write to a temp file
+  let tmpPromptFile: string | null = null;
+
   if (provider === 'codex') {
     cmd = 'codex';
     args = ['exec', '--json', '--sandbox', 'read-only'];
@@ -137,11 +197,20 @@ app.post('/api/chat', (req, res) => {
     cmd = 'claude';
     args = ['-p', '--output-format', 'stream-json', '--verbose'];
     if (model) args.push('--model', model);
-    if (systemPrompt) args.push('--system-prompt', systemPrompt);
+    if (systemPrompt) {
+      if (systemPrompt.length > 10000) {
+        // Write to temp file to avoid CLI argument length limits
+        tmpPromptFile = path.join(DATA_DIR, `prompt-${Date.now()}.txt`);
+        fs.writeFileSync(tmpPromptFile, systemPrompt);
+        args.push('--system-prompt-file', tmpPromptFile);
+      } else {
+        args.push('--system-prompt', systemPrompt);
+      }
+    }
     args.push(prompt);
   }
 
-  console.log('[chat] spawning:', cmd, args.slice(0, 5).join(' '), '...');
+  console.log('[chat] spawning:', cmd, args.slice(0, 5).join(' '), '...', systemPrompt?.length ? `(system prompt: ${systemPrompt.length} chars)` : '');
 
   proc = spawn(cmd, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -173,6 +242,10 @@ app.post('/api/chat', (req, res) => {
     }
     res.write(`data: ${JSON.stringify({ type: 'done', code })}\n\n`);
     res.end();
+    // Clean up temp prompt file
+    if (tmpPromptFile && fs.existsSync(tmpPromptFile)) {
+      fs.unlinkSync(tmpPromptFile);
+    }
   });
 
   proc.on('error', (err) => {
@@ -211,6 +284,11 @@ function nodeToMd(node: Record<string, unknown>): string {
       lines.push(`## ${msg.role}`);
       lines.push(msg.content);
       lines.push('');
+    }
+  } else if (node.type === 'fileBox') {
+    const files = (data.files || []) as Array<Record<string, unknown>>;
+    for (const file of files) {
+      lines.push(`- [${file.type}] ${file.filename} (${file.path})`);
     }
   }
 
@@ -264,6 +342,10 @@ function parseMdNode(content: string): { frontmatter: Record<string, string>; da
       }
     }
     data.messages = messages;
+  } else if (frontmatter.type === 'fileBox') {
+    // Files are stored in graph.json data, not in the .md body
+    // The .md is just a human-readable reference
+    data.files = data.files || [];
   }
 
   return { frontmatter, data };

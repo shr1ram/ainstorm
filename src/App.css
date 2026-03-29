@@ -71,6 +71,15 @@
   background: #2e5a8f;
 }
 
+.toolbar-btn-file {
+  background: #3a4a2e;
+  border-color: #5a7a3e;
+}
+
+.toolbar-btn-file:hover {
+  background: #5a7a3e;
+}
+
 .toolbar-provider {
   display: flex;
   align-items: center;
@@ -387,6 +396,147 @@
 
 .chat-input:focus {
   border-color: #88b;
+}
+
+/* File node */
+.file-node {
+  border: 2px solid #c8d8c0;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-node:hover {
+  border-color: #8ab87a;
+}
+
+.file-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.file-list::-webkit-scrollbar {
+  display: none;
+}
+
+.file-list {
+  scrollbar-width: none;
+}
+
+.file-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 60px;
+  border: 2px dashed #ccc;
+  border-radius: 6px;
+  color: #999;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.file-drop-zone:hover {
+  border-color: #8ab87a;
+  color: #6a9a5a;
+  background: #f5faf2;
+}
+
+.file-drop-hint {
+  font-size: 0.7rem;
+  color: #bbb;
+  margin-top: 2px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  background: #f8faf6;
+  border-radius: 6px;
+  border: 1px solid #e0e8d8;
+}
+
+.file-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.file-pdf-icon {
+  width: 36px;
+  height: 36px;
+  background: #e74c3c;
+  color: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 0.78rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-extracted {
+  font-size: 0.65rem;
+  color: #888;
+}
+
+.file-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #bbb;
+  font-size: 14px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.file-remove:hover {
+  color: #c33;
+}
+
+.file-footer {
+  padding: 4px 8px 6px;
+  border-top: 1px solid #e8ede4;
+  flex-shrink: 0;
+}
+
+.file-add-btn {
+  background: none;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  color: #888;
+  cursor: pointer;
+}
+
+.file-add-btn:hover {
+  border-color: #8ab87a;
+  color: #6a9a5a;
 }
 
 /* React Flow overrides */

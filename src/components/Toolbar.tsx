@@ -4,6 +4,7 @@ import type { AIProvider } from '../types';
 export function Toolbar() {
   const addTextNode = useStore((s) => s.addTextNode);
   const addChatNode = useStore((s) => s.addChatNode);
+  const addFileNode = useStore((s) => s.addFileNode);
   const defaultProvider = useStore((s) => s.defaultProvider);
   const setDefaultProvider = useStore((s) => s.setDefaultProvider);
   const defaultFontSize = useStore((s) => s.defaultFontSize);
@@ -18,6 +19,9 @@ export function Toolbar() {
         </button>
         <button className="toolbar-btn toolbar-btn-chat" onClick={() => addChatNode()}>
           + Chat Box
+        </button>
+        <button className="toolbar-btn toolbar-btn-file" onClick={() => addFileNode()}>
+          + File Box
         </button>
       </div>
       <div className="toolbar-provider">

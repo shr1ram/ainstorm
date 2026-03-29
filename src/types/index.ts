@@ -32,9 +32,24 @@ export interface ChatBotData {
   sessionId?: string; // for claude --resume
 }
 
+export interface FileAttachment {
+  id: string;
+  filename: string;
+  path: string;
+  type: 'pdf' | 'image';
+  extractedText?: string;
+  size?: number;
+}
+
+export interface FileBoxData {
+  label: string;
+  files: FileAttachment[];
+}
+
 export type TextBoxNode = Node<TextBoxData, 'textBox'>;
 export type ChatBotNode = Node<ChatBotData, 'chatBot'>;
-export type AppNode = TextBoxNode | ChatBotNode;
+export type FileBoxNode = Node<FileBoxData, 'fileBox'>;
+export type AppNode = TextBoxNode | ChatBotNode | FileBoxNode;
 export type AppEdge = Edge;
 
 export interface GraphData {
