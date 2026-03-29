@@ -146,6 +146,7 @@ app.post('/api/save', (req, res) => {
         type: n.type,
         position: n.position,
         data: n.data,
+        style: n.style,
         measured: n.measured,
       })),
       edges: edges.map((e: Record<string, unknown>) => ({

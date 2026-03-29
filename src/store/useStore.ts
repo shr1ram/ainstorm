@@ -381,7 +381,14 @@ export const useStore = create<AppState>((set, get) => ({
       }
       const data = await res.json();
       if (data.nodes && data.nodes.length > 0) {
-        set({ nodes: data.nodes, edges: data.edges || [], loaded: true });
+        // Ensure loaded nodes have style dimensions so they don't auto-expand
+        const nodes = data.nodes.map((n: Node) => {
+          if (!n.style && n.measured) {
+            return { ...n, style: { width: n.measured.width, height: n.measured.height } };
+          }
+          return n;
+        });
+        set({ nodes, edges: data.edges || [], loaded: true });
       } else {
         set({ loaded: true });
       }
