@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef } from 'react';
+import { memo, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { TextBoxData, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
@@ -10,7 +10,6 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
   const updateNodeData = useStore((s) => s.updateNodeData);
   const deleteNode = useStore((s) => s.deleteNode);
   const forkNode = useStore((s) => s.forkNode);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -100,7 +99,7 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
       </button>
 
       <textarea
-        className="node-content nodrag"
+        className="node-content nodrag nopan"
         value={nodeData.content || ''}
         onChange={handleContentChange}
         placeholder="Type your thoughts..."
@@ -117,26 +116,6 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
           ))}
         </div>
       )}
-
-      <div className="node-footer">
-        <button
-          className="upload-btn nodrag"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          + Image
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleImageUpload(file);
-            e.target.value = '';
-          }}
-        />
-      </div>
 
       <div onClickCapture={handleSourceHandleClick}>
         <Handle type="source" position={Position.Bottom} />

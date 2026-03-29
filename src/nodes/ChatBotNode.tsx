@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useState, useEffect } from 'react';
+import { memo, useCallback, useState, useEffect, useRef } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { ChatBotData, AIProvider, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
@@ -13,7 +13,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
   const forkNode = useStore((s) => s.forkNode);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -132,7 +131,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         </select>
       </div>
 
-      <div className="chat-messages nodrag">
+      <div className="chat-messages nodrag nopan">
         {nodeData.messages.length === 0 && (
           <div className="chat-empty">Send a message to start brainstorming...</div>
         )}
@@ -182,24 +181,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         >
           {nodeData.isStreaming ? '...' : '->'}
         </button>
-        <button
-          className="upload-btn"
-          onClick={() => fileInputRef.current?.click()}
-          title="Attach image"
-        >
-          +img
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleImageUpload(file);
-            e.target.value = '';
-          }}
-        />
       </div>
 
       <div onClickCapture={handleSourceHandleClick}>
