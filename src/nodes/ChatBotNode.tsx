@@ -13,10 +13,13 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
   const deleteNode = useStore((s) => s.deleteNode);
   const forkNode = useStore((s) => s.forkNode);
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = messagesRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [nodeData.messages]);
 
   const handleSend = useCallback(() => {
@@ -90,7 +93,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         ×
       </button>
 
-      <div className="chat-messages nodrag nopan nowheel">
+      <div className="chat-messages nodrag nopan nowheel" ref={messagesRef}>
         {nodeData.messages.length === 0 && (
           <div className="chat-empty">Send a message to start brainstorming...</div>
         )}
@@ -109,7 +112,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         {nodeData.isStreaming && (
           <div className="chat-streaming">Thinking...</div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {nodeData.images && nodeData.images.length > 0 && (
