@@ -88,6 +88,21 @@
   font-size: 0.8rem;
 }
 
+.toolbar-font-input {
+  background: #2d2d4e;
+  color: #e0e0ff;
+  border: 1px solid #3d3d6e;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  width: 42px;
+  text-align: center;
+}
+
+.toolbar-font-input::-webkit-inner-spin-button {
+  opacity: 1;
+}
+
 /* Node containers */
 .node-container {
   background: #fff;
@@ -243,9 +258,8 @@
   padding: 8px 10px;
   border-radius: 8px;
   font-size: 0.85rem;
-  line-height: 1.5;
+  line-height: 1.4;
   word-wrap: break-word;
-  white-space: pre-wrap;
 }
 
 .chat-user {
@@ -281,12 +295,12 @@
 .chat-content h1 { font-size: 1em; }
 
 .chat-content ul, .chat-content ol {
-  margin: 0.3em 0;
-  padding-left: 1.4em;
+  margin: 0.2em 0;
+  padding-left: 1.3em;
 }
 
 .chat-content li {
-  margin: 0.15em 0;
+  margin: 0;
 }
 
 .chat-content code {

@@ -19,6 +19,7 @@ interface AppState {
   nodes: Node[];
   edges: Edge[];
   defaultProvider: AIProvider;
+  defaultFontSize: number;
   loaded: boolean;
 
   onNodesChange: OnNodesChange;
@@ -26,6 +27,7 @@ interface AppState {
   onConnect: OnConnect;
 
   setDefaultProvider: (p: AIProvider) => void;
+  setDefaultFontSize: (size: number) => void;
   addTextNode: (position?: { x: number; y: number }) => void;
   addChatNode: (position?: { x: number; y: number }) => void;
   updateNodeData: (nodeId: string, data: Partial<TextBoxData | ChatBotData>) => void;
@@ -52,6 +54,7 @@ export const useStore = create<AppState>((set, get) => ({
   nodes: [],
   edges: [],
   defaultProvider: 'claude',
+  defaultFontSize: 14,
   loaded: false,
 
   onNodesChange: (changes) => {
@@ -75,6 +78,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setDefaultProvider: (p) => set({ defaultProvider: p }),
+  setDefaultFontSize: (size) => set({ defaultFontSize: size }),
 
   addTextNode: (position) => {
     const id = generateId();

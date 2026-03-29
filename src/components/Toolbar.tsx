@@ -6,6 +6,8 @@ export function Toolbar() {
   const addChatNode = useStore((s) => s.addChatNode);
   const defaultProvider = useStore((s) => s.defaultProvider);
   const setDefaultProvider = useStore((s) => s.setDefaultProvider);
+  const defaultFontSize = useStore((s) => s.defaultFontSize);
+  const setDefaultFontSize = useStore((s) => s.setDefaultFontSize);
 
   return (
     <div className="toolbar">
@@ -19,7 +21,7 @@ export function Toolbar() {
         </button>
       </div>
       <div className="toolbar-provider">
-        <label>Default:</label>
+        <label>AI:</label>
         <select
           value={defaultProvider}
           onChange={(e) => setDefaultProvider(e.target.value as AIProvider)}
@@ -27,6 +29,18 @@ export function Toolbar() {
           <option value="claude">Claude</option>
           <option value="codex">Codex</option>
         </select>
+      </div>
+      <div className="toolbar-provider">
+        <label>Font:</label>
+        <input
+          type="number"
+          className="toolbar-font-input"
+          value={defaultFontSize}
+          onChange={(e) => setDefaultFontSize(Number(e.target.value) || 14)}
+          min={8}
+          max={32}
+        />
+        <span>px</span>
       </div>
     </div>
   );

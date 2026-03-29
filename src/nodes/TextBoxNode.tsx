@@ -10,6 +10,7 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
   const updateNodeData = useStore((s) => s.updateNodeData);
   const deleteNode = useStore((s) => s.deleteNode);
   const forkNode = useStore((s) => s.forkNode);
+  const defaultFontSize = useStore((s) => s.defaultFontSize);
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -105,6 +106,7 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
         onChange={handleContentChange}
         placeholder="Type your thoughts..."
         rows={4}
+        style={{ fontSize: `${defaultFontSize}px` }}
       />
 
       {nodeData.images && nodeData.images.length > 0 && (
