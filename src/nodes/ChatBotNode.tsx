@@ -131,7 +131,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         </select>
       </div>
 
-      <div className="chat-messages nodrag nopan">
+      <div className="chat-messages nodrag nopan nowheel">
         {nodeData.messages.length === 0 && (
           <div className="chat-empty">Send a message to start brainstorming...</div>
         )}
