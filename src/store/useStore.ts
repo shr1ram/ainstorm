@@ -58,7 +58,14 @@ export const useStore = create<AppState>((set, get) => ({
   loaded: false,
 
   onNodesChange: (changes) => {
-    set({ nodes: applyNodeChanges(changes, get().nodes) });
+    // Filter out dimension changes from auto-measurement — nodes should only
+    // resize via the NodeResizer, not when content changes.
+    const filtered = changes.filter((c) => {
+      if (c.type === 'dimensions' && c.resizing !== true) return false;
+      return true;
+    });
+    if (filtered.length === 0) return;
+    set({ nodes: applyNodeChanges(filtered, get().nodes) });
     get().debouncedSave();
   },
 
