@@ -8,10 +8,10 @@ AI chat nodes spawn **Claude Code** or **Codex** CLI subprocesses, so they use y
 
 - **Infinite canvas** — pan, zoom, drag nodes freely (powered by React Flow)
 - **Text boxes** — editable notes you can connect together
-- **AI chat nodes** — conversational interface to Claude or Codex, with model selection
+- **AI chat nodes** — conversational interface to Claude or Codex, streaming responses in real-time
 - **Directed context flow** — arrows between nodes control what context flows where. Upstream nodes automatically pass their content to downstream chat nodes
-- **Branching / forking** — fork any node to explore parallel ideas. Parent updates flow through to children automatically
-- **Image support** — paste or upload images into any node
+- **Branching / forking** — shift-click the bottom handle of any node to fork it. The fork inherits all upstream context and diverges independently
+- **Image support** — paste images from clipboard into any node
 - **Markdown persistence** — each node saves as a `.md` file in `data/nodes/`, graph structure in `data/graph.json`. Human-readable and editable outside the app
 - **No API keys required** — uses `claude` and `codex` CLI tools via your existing subscriptions
 
@@ -32,70 +32,26 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-This starts two processes concurrently:
-- **Vite dev server** on port 5173 (frontend)
-- **Express server** on port 3001 (API proxy for CLI subprocesses + file persistence)
+## Quick usage
 
-## Usage
-
-1. Click **+ Text Box** to create a note, or **+ Chat Box** to create an AI conversation node
+1. Click **+ Text Box** or **+ Chat Box** in the toolbar
 2. Type in text boxes to capture ideas
-3. **Connect nodes** by dragging from the bottom handle of one node to the top handle of another — this creates a directed edge that controls context flow
-4. In a chat node, type a message and press Enter. The AI sees all upstream node content as context
-5. **Fork** any node (fork button in the header) to branch off and explore a different direction. The fork inherits all upstream context and continues to receive updates from its parent
-6. Switch between **Claude** and **Codex** providers per-node using the dropdown
-7. Paste or upload **images** into any node
+3. **Connect nodes** by dragging from the bottom handle to the top handle of another node
+4. In a chat node, type a message and press **Enter** — the AI sees all upstream context
+5. **Shift-click** the bottom handle of any node to fork it
+6. Choose the default AI provider (Claude/Codex) from the toolbar dropdown
 
-## How context propagation works
+## Documentation
 
-When you send a message in a chat node, ainstorm traverses all upstream edges to gather context:
+See the [docs/](docs/) folder for detailed documentation:
 
-```
-[Text: "Build a productivity app"] → [Text: "Focus on habits"] → [Claude Chat]
-```
-
-The chat node sees both upstream text boxes as context in its system prompt. If you fork the chat node, both forks share the same upstream context but diverge independently.
-
-Cycles are automatically rejected — you can only create directed acyclic graphs.
-
-## Persistence
-
-All data is saved locally in the `data/` directory:
-
-```
-data/
-├── graph.json        # node positions, edges, metadata
-├── nodes/
-│   ├── node-abc.md   # text box content as markdown
-│   └── node-def.md   # chat conversation as markdown
-└── images/           # uploaded/pasted images
-```
-
-Node files use YAML frontmatter:
-
-```markdown
----
-id: node-abc
-type: textBox
-label: "My Idea"
-created: 2026-03-29T00:00:00Z
----
-
-The actual content goes here.
-```
-
-Chat nodes store conversations with `## user` / `## assistant` headers. Changes auto-save with 500ms debounce.
-
-## Tech stack
-
-| Component | Technology |
-|-----------|-----------|
-| Canvas | [React Flow](https://reactflow.dev/) |
-| Frontend | React + TypeScript + Vite |
-| State | [Zustand](https://github.com/pmndrs/zustand) |
-| Backend | Express (minimal API proxy + file I/O) |
-| AI | Claude Code CLI / Codex CLI (subprocesses) |
-| Persistence | Markdown files + JSON |
+- [Overview](docs/overview.md) — what ainstorm is and why it exists
+- [User Guide](docs/user-guide.md) — how to use the app, keyboard shortcuts, tips
+- [Architecture](docs/architecture.md) — system diagram, project structure, tech stack, design decisions
+- [Context Propagation](docs/context-propagation.md) — how upstream context flows to chat nodes
+- [CLI Integration](docs/cli-integration.md) — how Claude/Codex CLI subprocesses work
+- [Persistence](docs/persistence.md) — markdown file format, save/load flow
+- [Development](docs/development.md) — setup, API endpoints, adding node types, debugging
 
 ## License
 
