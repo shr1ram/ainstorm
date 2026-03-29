@@ -3,8 +3,9 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import multer from 'multer';
-// @ts-ignore - pdf-parse has no types
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 const app = express();
 const PORT = 3001;
