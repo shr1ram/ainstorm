@@ -260,7 +260,7 @@
 .chat-message {
   padding: 8px 10px;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: inherit;
   line-height: 1.4;
   word-wrap: break-word;
 }
