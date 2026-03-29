@@ -223,22 +223,13 @@
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar for chat */
+/* Hide scrollbar but keep scroll functionality */
 .chat-messages::-webkit-scrollbar {
-  width: 5px;
+  display: none;
 }
 
-.chat-messages::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #999;
+.chat-messages {
+  scrollbar-width: none;
 }
 
 .chat-empty {
