@@ -9,8 +9,8 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
   const nodeData = data as unknown as ChatBotData;
   const updateNodeData = useStore((s) => s.updateNodeData);
   const sendMessage = useStore((s) => s.sendMessage);
-  const forkNode = useStore((s) => s.forkNode);
   const deleteNode = useStore((s) => s.deleteNode);
+  const forkNode = useStore((s) => s.forkNode);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,25 +75,46 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       const files = getImagesFromClipboard(e);
-      for (const file of files) {
-        handleImageUpload(file);
+      if (files.length > 0) {
+        e.preventDefault();
+        for (const file of files) {
+          handleImageUpload(file);
+        }
       }
     },
     [handleImageUpload]
   );
 
+  const handleSourceHandleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.shiftKey) {
+        e.stopPropagation();
+        e.preventDefault();
+        forkNode(id);
+      }
+    },
+    [id, forkNode]
+  );
+
   const claudeModels = ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5-20251001'];
   const codexModels = ['o3', 'gpt-4o', 'o4-mini', 'codex-mini'];
-
   const models = nodeData.provider === 'claude' ? claudeModels : codexModels;
 
   return (
     <div className="node-container chat-node">
       <Handle type="target" position={Position.Top} />
 
-      <div className="node-header">
+      <button
+        className="node-close nodrag"
+        onClick={() => deleteNode(id)}
+        title="Delete"
+      >
+        ×
+      </button>
+
+      <div className="chat-controls nodrag">
         <select
-          className="provider-select nodrag"
+          className="provider-select"
           value={nodeData.provider}
           onChange={handleProviderChange}
         >
@@ -101,7 +122,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
           <option value="codex">Codex</option>
         </select>
         <select
-          className="model-select nodrag"
+          className="model-select"
           value={nodeData.model}
           onChange={handleModelChange}
         >
@@ -109,14 +130,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
-        <div className="node-actions">
-          <button className="node-btn" onClick={() => forkNode(id)} title="Fork">
-            ⑂
-          </button>
-          <button className="node-btn node-btn-danger" onClick={() => deleteNode(id)} title="Delete">
-            ×
-          </button>
-        </div>
       </div>
 
       <div className="chat-messages nodrag">
@@ -125,7 +138,6 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         )}
         {nodeData.messages.map((msg) => (
           <div key={msg.id} className={`chat-message chat-${msg.role}`}>
-            <div className="chat-role">{msg.role === 'user' ? 'You' : nodeData.label}</div>
             <div className="chat-content">{msg.content}</div>
             {msg.images && msg.images.length > 0 && (
               <div className="chat-images">
@@ -168,14 +180,14 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
           onClick={handleSend}
           disabled={nodeData.isStreaming || !input.trim()}
         >
-          {nodeData.isStreaming ? '...' : '→'}
+          {nodeData.isStreaming ? '...' : '->'}
         </button>
         <button
           className="upload-btn"
           onClick={() => fileInputRef.current?.click()}
           title="Attach image"
         >
-          🖼
+          +img
         </button>
         <input
           ref={fileInputRef}
@@ -190,7 +202,9 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         />
       </div>
 
-      <Handle type="source" position={Position.Bottom} />
+      <div onClickCapture={handleSourceHandleClick}>
+        <Handle type="source" position={Position.Bottom} />
+      </div>
     </div>
   );
 }

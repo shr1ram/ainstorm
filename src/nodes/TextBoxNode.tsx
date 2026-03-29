@@ -8,20 +8,13 @@ import { getImagesFromClipboard } from '../lib/imageUtils';
 function TextBoxNodeComponent({ id, data }: NodeProps) {
   const nodeData = data as unknown as TextBoxData;
   const updateNodeData = useStore((s) => s.updateNodeData);
-  const forkNode = useStore((s) => s.forkNode);
   const deleteNode = useStore((s) => s.deleteNode);
+  const forkNode = useStore((s) => s.forkNode);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       updateNodeData(id, { content: e.target.value });
-    },
-    [id, updateNodeData]
-  );
-
-  const handleLabelChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateNodeData(id, { label: e.target.value });
     },
     [id, updateNodeData]
   );
@@ -46,8 +39,11 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       const files = getImagesFromClipboard(e);
-      for (const file of files) {
-        handleImageUpload(file);
+      if (files.length > 0) {
+        e.preventDefault();
+        for (const file of files) {
+          handleImageUpload(file);
+        }
       }
     },
     [handleImageUpload]
@@ -75,36 +71,38 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
     [id, nodeData.images, updateNodeData]
   );
 
+  const handleSourceHandleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.shiftKey) {
+        e.stopPropagation();
+        e.preventDefault();
+        forkNode(id);
+      }
+    },
+    [id, forkNode]
+  );
+
   return (
     <div
       className="node-container text-node"
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
+      onPaste={handlePaste}
     >
       <Handle type="target" position={Position.Top} />
 
-      <div className="node-header">
-        <input
-          className="node-label nodrag"
-          value={nodeData.label || ''}
-          onChange={handleLabelChange}
-          placeholder="Label..."
-        />
-        <div className="node-actions">
-          <button className="node-btn" onClick={() => forkNode(id)} title="Fork">
-            ⑂
-          </button>
-          <button className="node-btn node-btn-danger" onClick={() => deleteNode(id)} title="Delete">
-            ×
-          </button>
-        </div>
-      </div>
+      <button
+        className="node-close nodrag"
+        onClick={() => deleteNode(id)}
+        title="Delete"
+      >
+        ×
+      </button>
 
       <textarea
         className="node-content nodrag"
         value={nodeData.content || ''}
         onChange={handleContentChange}
-        onPaste={handlePaste}
         placeholder="Type your thoughts..."
         rows={4}
       />
@@ -140,7 +138,9 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
         />
       </div>
 
-      <Handle type="source" position={Position.Bottom} />
+      <div onClickCapture={handleSourceHandleClick}>
+        <Handle type="source" position={Position.Bottom} />
+      </div>
     </div>
   );
 }
