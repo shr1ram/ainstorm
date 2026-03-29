@@ -250,20 +250,80 @@
 
 .chat-user {
   background: #e8eeff;
-  align-self: flex-end;
-  max-width: 90%;
-  border-bottom-right-radius: 2px;
+  align-self: stretch;
 }
 
 .chat-assistant {
   background: #f5f5f5;
-  align-self: flex-start;
-  max-width: 95%;
-  border-bottom-left-radius: 2px;
+  align-self: stretch;
 }
 
 .chat-content {
   color: #333;
+}
+
+/* Markdown rendering inside chat messages */
+.chat-content p {
+  margin: 0 0 0.4em;
+}
+
+.chat-content p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-content h1, .chat-content h2, .chat-content h3 {
+  margin: 0.5em 0 0.3em;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #222;
+}
+
+.chat-content h1 { font-size: 1em; }
+
+.chat-content ul, .chat-content ol {
+  margin: 0.3em 0;
+  padding-left: 1.4em;
+}
+
+.chat-content li {
+  margin: 0.15em 0;
+}
+
+.chat-content code {
+  background: #e8e8e8;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.chat-content pre {
+  background: #f0f0f0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.4em 0;
+}
+
+.chat-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.chat-content blockquote {
+  border-left: 3px solid #ccc;
+  margin: 0.4em 0;
+  padding-left: 8px;
+  color: #666;
+}
+
+.chat-content strong {
+  font-weight: 600;
+}
+
+.chat-content hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 0.5em 0;
 }
 
 .chat-images {

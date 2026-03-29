@@ -1,5 +1,6 @@
 import { memo, useCallback, useState, useEffect, useRef } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import Markdown from 'react-markdown';
 import type { ChatBotData, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
 import { uploadImage } from '../lib/api';
@@ -95,7 +96,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         )}
         {nodeData.messages.map((msg) => (
           <div key={msg.id} className={`chat-message chat-${msg.role}`}>
-            <div className="chat-content">{msg.content}</div>
+            <div className="chat-content"><Markdown>{msg.content}</Markdown></div>
             {msg.images && msg.images.length > 0 && (
               <div className="chat-images">
                 {msg.images.map((img) => (
