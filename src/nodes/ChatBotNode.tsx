@@ -12,6 +12,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
   const sendMessage = useStore((s) => s.sendMessage);
   const deleteNode = useStore((s) => s.deleteNode);
   const forkNode = useStore((s) => s.forkNode);
+  const defaultFontSize = useStore((s) => s.defaultFontSize);
   const [input, setInput] = useState('');
   const messagesRef = useRef<HTMLDivElement>(null);
 
@@ -93,7 +94,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
         ×
       </button>
 
-      <div className="chat-messages nodrag nopan nowheel" ref={messagesRef}>
+      <div className="chat-messages nodrag nopan nowheel" ref={messagesRef} style={{ fontSize: `${defaultFontSize}px` }}>
         {nodeData.messages.length === 0 && (
           <div className="chat-empty">Send a message to start brainstorming...</div>
         )}
