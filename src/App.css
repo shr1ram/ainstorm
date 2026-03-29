@@ -95,7 +95,8 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   min-width: 200px;
   position: relative;
-  resize: both;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -354,7 +355,24 @@
   overflow: hidden;
 }
 
-/* Resize handle in bottom-right corner */
-.node-container::-webkit-resizable {
-  display: none;
+/* NodeResizer: hide edge lines, show only corner handles */
+.node-resize-line {
+  border: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
+
+.node-resize-handle {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 2px !important;
+  background: #4a6fa5 !important;
+  border: none !important;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.react-flow__node:hover .node-resize-handle,
+.react-flow__node.selected .node-resize-handle {
+  opacity: 1;
 }

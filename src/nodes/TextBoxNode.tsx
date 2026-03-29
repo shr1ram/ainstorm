@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import type { TextBoxData, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
 import { uploadImage } from '../lib/api';
@@ -88,6 +88,7 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
       onDragOver={(e) => e.preventDefault()}
       onPaste={handlePaste}
     >
+      <NodeResizer minWidth={200} minHeight={80} lineClassName="node-resize-line" handleClassName="node-resize-handle" />
       <Handle type="target" position={Position.Top} />
 
       <button

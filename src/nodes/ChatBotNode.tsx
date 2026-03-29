@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useEffect, useRef } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import type { ChatBotData, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
 import { uploadImage } from '../lib/api';
@@ -78,6 +78,7 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
 
   return (
     <div className="node-container chat-node">
+      <NodeResizer minWidth={280} minHeight={200} lineClassName="node-resize-line" handleClassName="node-resize-handle" />
       <Handle type="target" position={Position.Top} />
 
       <button
