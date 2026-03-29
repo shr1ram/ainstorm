@@ -112,6 +112,9 @@
   border: 2px solid #b8d4e3;
   min-width: 280px;
   min-height: 200px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-node:hover {
@@ -232,6 +235,7 @@
 /* Chat messages — scrollable, fills available space */
 .chat-messages {
   flex: 1;
+  min-height: 0; /* critical: allows flex child to shrink and scroll */
   overflow-y: auto;
   padding: 8px;
   padding-right: 28px;
@@ -239,13 +243,6 @@
   flex-direction: column;
   gap: 8px;
   scroll-behavior: smooth;
-  min-height: 60px;
-}
-
-/* Chat node uses flex column to fill resized height */
-.chat-node {
-  display: flex;
-  flex-direction: column;
 }
 
 /* Custom scrollbar for chat */
