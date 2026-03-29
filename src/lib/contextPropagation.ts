@@ -80,7 +80,7 @@ export function getUpstreamContext(
       if (data.content.trim()) {
         contextParts.push(`### ${data.label || 'Text Node'}\n${data.content}`);
       }
-    } else if (node.type === 'chatBot') {
+    } else if (node.type === 'chatBot' || node.type === 'codeBox') {
       const data = node.data as ChatBotData;
       if (data.messages.length > 0) {
         const conversation = data.messages

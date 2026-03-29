@@ -170,7 +170,8 @@ app.post('/api/save', (req, res) => {
 
 // Chat endpoint — spawns CLI subprocess
 app.post('/api/chat', (req, res) => {
-  const { prompt, systemPrompt, provider, model } = req.body;
+  const { prompt, systemPrompt, provider, model, mode } = req.body;
+  // mode: 'chat' (web search only), 'code' (full tools)
 
   console.log('[chat] provider:', provider, 'model:', model, 'prompt length:', prompt?.length);
 
@@ -197,9 +198,18 @@ app.post('/api/chat', (req, res) => {
     cmd = 'claude';
     args = ['-p', '--output-format', 'stream-json', '--verbose'];
     if (model) args.push('--model', model);
+
+    // Tool access based on mode
+    if (mode === 'code') {
+      // Full coding agent — all tools, add working directory
+      args.push('--tools', 'default');
+    } else {
+      // Chat mode — web search and fetch only
+      args.push('--tools', 'WebSearch,WebFetch');
+    }
+
     if (systemPrompt) {
       if (systemPrompt.length > 10000) {
-        // Write to temp file to avoid CLI argument length limits
         tmpPromptFile = path.join(DATA_DIR, `prompt-${Date.now()}.txt`);
         fs.writeFileSync(tmpPromptFile, systemPrompt);
         args.push('--system-prompt-file', tmpPromptFile);
@@ -278,7 +288,8 @@ function nodeToMd(node: Record<string, unknown>): string {
 
   if (node.type === 'textBox') {
     lines.push(String(data.content || ''));
-  } else if (node.type === 'chatBot') {
+  } else if (node.type === 'chatBot' || node.type === 'codeBox') {
+    if (data.mode) lines.splice(lines.length - 2, 0, `mode: ${data.mode}`);
     const messages = (data.messages || []) as Array<{ role: string; content: string }>;
     for (const msg of messages) {
       lines.push(`## ${msg.role}`);
@@ -319,7 +330,7 @@ function parseMdNode(content: string): { frontmatter: Record<string, string>; da
   if (frontmatter.type === 'textBox') {
     data.content = body.trim();
     data.images = [];
-  } else if (frontmatter.type === 'chatBot') {
+  } else if (frontmatter.type === 'chatBot' || frontmatter.type === 'codeBox') {
     data.provider = frontmatter.provider || 'claude';
     data.model = frontmatter.model || 'claude-sonnet-4-6';
     data.isStreaming = false;

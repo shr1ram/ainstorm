@@ -71,6 +71,15 @@
   background: #2e5a8f;
 }
 
+.toolbar-btn-code {
+  background: #4a2e5f;
+  border-color: #7a3e8f;
+}
+
+.toolbar-btn-code:hover {
+  background: #7a3e8f;
+}
+
 .toolbar-btn-file {
   background: #3a4a2e;
   border-color: #5a7a3e;
@@ -396,6 +405,26 @@
 
 .chat-input:focus {
   border-color: #88b;
+}
+
+/* Code node */
+.code-node {
+  border: 2px solid #d4b8e3;
+  display: flex;
+  flex-direction: column;
+}
+
+.code-node:hover {
+  border-color: #b87ad4;
+}
+
+.code-label {
+  padding: 4px 10px 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #9a6ab8;
+  letter-spacing: 1px;
+  flex-shrink: 0;
 }
 
 /* File node */

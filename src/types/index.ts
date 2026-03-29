@@ -22,10 +22,13 @@ export interface ChatMessage {
 
 export type AIProvider = 'claude' | 'codex';
 
+export type NodeMode = 'chat' | 'code';
+
 export interface ChatBotData {
   label: string;
   provider: AIProvider;
   model: string;
+  mode: NodeMode;
   messages: ChatMessage[];
   isStreaming: boolean;
   images: ImageAttachment[];
@@ -48,8 +51,9 @@ export interface FileBoxData {
 
 export type TextBoxNode = Node<TextBoxData, 'textBox'>;
 export type ChatBotNode = Node<ChatBotData, 'chatBot'>;
+export type CodeBoxNode = Node<ChatBotData, 'codeBox'>;
 export type FileBoxNode = Node<FileBoxData, 'fileBox'>;
-export type AppNode = TextBoxNode | ChatBotNode | FileBoxNode;
+export type AppNode = TextBoxNode | ChatBotNode | CodeBoxNode | FileBoxNode;
 export type AppEdge = Edge;
 
 export interface GraphData {

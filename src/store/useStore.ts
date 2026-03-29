@@ -30,6 +30,7 @@ interface AppState {
   setDefaultFontSize: (size: number) => void;
   addTextNode: (position?: { x: number; y: number }) => void;
   addChatNode: (position?: { x: number; y: number }) => void;
+  addCodeNode: (position?: { x: number; y: number }) => void;
   addFileNode: (position?: { x: number; y: number }) => void;
   updateNodeData: (nodeId: string, data: Partial<TextBoxData | ChatBotData | FileBoxData>) => void;
   deleteNode: (nodeId: string) => void;
@@ -45,11 +46,17 @@ function generateId() {
   return 'node-' + Math.random().toString(36).slice(2, 10);
 }
 
-const DEFAULT_SYSTEM_PROMPT = `You are a brainstorming assistant in a visual thinking tool called ainstorm.
-You are NOT a coding agent — do not attempt to read files, run commands, or use tools.
+const CHAT_SYSTEM_PROMPT = `You are a brainstorming assistant in a visual thinking tool called ainstorm.
+You are NOT a coding agent — do not attempt to read files, run commands, or use tools other than web search and web fetch.
 Focus on creative thinking, analysis, ideation, and structured reasoning.
+You can search the internet and fetch websites to find information.
 Respond conversationally and helpfully. Be concise but thorough.
 If upstream context is provided, use it to inform your responses.`;
+
+const CODE_SYSTEM_PROMPT = `You are a coding agent in a visual thinking tool called ainstorm.
+You have full access to tools: you can read/write files, run bash commands, search code, and use all available tools.
+If upstream context is provided, use it to inform your work.
+Be thorough but concise in your responses.`;
 
 export const useStore = create<AppState>((set, get) => ({
   nodes: [],
@@ -117,11 +124,34 @@ export const useStore = create<AppState>((set, get) => ({
         label: defaultProvider === 'claude' ? 'Claude' : 'Codex',
         provider: defaultProvider,
         model: defaultProvider === 'claude' ? 'claude-sonnet-4-6' : 'o3',
+        mode: 'chat',
         messages: [],
         isStreaming: false,
         images: [],
       },
       style: { width: 350, height: 400 },
+    };
+    set({ nodes: [...get().nodes, newNode] });
+    get().debouncedSave();
+  },
+
+  addCodeNode: (position) => {
+    const id = generateId();
+    const { defaultProvider } = get();
+    const newNode: Node<ChatBotData> = {
+      id,
+      type: 'codeBox',
+      position: position || { x: Math.random() * 400 + 100, y: Math.random() * 400 + 100 },
+      data: {
+        label: defaultProvider === 'claude' ? 'Claude Code' : 'Codex Code',
+        provider: defaultProvider,
+        model: defaultProvider === 'claude' ? 'claude-sonnet-4-6' : 'o3',
+        mode: 'code',
+        messages: [],
+        isStreaming: false,
+        images: [],
+      },
+      style: { width: 400, height: 450 },
     };
     set({ nodes: [...get().nodes, newNode] });
     get().debouncedSave();
@@ -175,9 +205,10 @@ export const useStore = create<AppState>((set, get) => ({
         : source.type === 'fileBox'
         ? { label: 'Files', files: [] }
         : {
-            label: (source.data as ChatBotData).provider === 'claude' ? 'Claude' : 'Codex',
+            label: (source.data as ChatBotData).label,
             provider: (source.data as ChatBotData).provider,
             model: (source.data as ChatBotData).model,
+            mode: (source.data as ChatBotData).mode || (source.type === 'codeBox' ? 'code' : 'chat'),
             messages: [],
             isStreaming: false,
             images: [],
@@ -186,6 +217,8 @@ export const useStore = create<AppState>((set, get) => ({
         ? { width: 300, height: 150 }
         : source.type === 'fileBox'
         ? { width: 250, height: 200 }
+        : source.type === 'codeBox'
+        ? { width: 400, height: 450 }
         : { width: 350, height: 400 },
     };
 
@@ -205,7 +238,7 @@ export const useStore = create<AppState>((set, get) => ({
   sendMessage: async (nodeId, content, images) => {
     const { nodes, edges, updateNodeData } = get();
     const node = nodes.find((n) => n.id === nodeId);
-    if (!node || node.type !== 'chatBot') return;
+    if (!node || (node.type !== 'chatBot' && node.type !== 'codeBox')) return;
 
     const data = node.data as ChatBotData;
 
@@ -229,9 +262,10 @@ export const useStore = create<AppState>((set, get) => ({
       conversationHistory += `\n\n## ${msg.role}\n${msg.content}`;
     }
 
+    const basePrompt = data.mode === 'code' ? CODE_SYSTEM_PROMPT : CHAT_SYSTEM_PROMPT;
     const systemPrompt = upstreamContext
-      ? `${DEFAULT_SYSTEM_PROMPT}\n\n## Upstream Context\n${upstreamContext}`
-      : DEFAULT_SYSTEM_PROMPT;
+      ? `${basePrompt}\n\n## Upstream Context\n${upstreamContext}`
+      : basePrompt;
 
     try {
       const response = await fetch('/api/chat', {
@@ -242,6 +276,7 @@ export const useStore = create<AppState>((set, get) => ({
           systemPrompt,
           provider: data.provider,
           model: data.model,
+          mode: data.mode || 'chat',
           sessionId: data.sessionId,
         }),
       });
