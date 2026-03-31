@@ -4,13 +4,14 @@ import type { TextBoxData, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
 import { uploadImage } from '../lib/api';
 import { getImagesFromClipboard } from '../lib/imageUtils';
+import { NodeContextMenu, useNodeContextMenu } from '../components/NodeContextMenu';
 
 function TextBoxNodeComponent({ id, data }: NodeProps) {
   const nodeData = data as unknown as TextBoxData;
   const updateNodeData = useStore((s) => s.updateNodeData);
   const deleteNode = useStore((s) => s.deleteNode);
-  const forkNode = useStore((s) => s.forkNode);
   const defaultFontSize = useStore((s) => s.defaultFontSize);
+  const { menu, wrapperRef, closeMenu } = useNodeContextMenu(id);
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -71,58 +72,50 @@ function TextBoxNodeComponent({ id, data }: NodeProps) {
     [id, nodeData.images, updateNodeData]
   );
 
-  const handleSourceHandleClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.shiftKey) {
-        e.stopPropagation();
-        e.preventDefault();
-        forkNode(id);
-      }
-    },
-    [id, forkNode]
-  );
-
   return (
-    <div
-      className="node-container text-node"
-      onDrop={handleDrop}
-      onDragOver={(e) => e.preventDefault()}
-      onPaste={handlePaste}
-    >
+    <div className="node-wrapper" ref={wrapperRef}>
       <NodeResizer minWidth={200} minHeight={80} lineClassName="node-resize-line" handleClassName="node-resize-handle" />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} id="top" />
+      <Handle type="target" position={Position.Left} id="left-target" />
+      <Handle type="source" position={Position.Bottom} id="bottom" />
+      <Handle type="source" position={Position.Right} id="right-source" />
 
-      <button
-        className="node-close nodrag"
-        onClick={() => deleteNode(id)}
-        title="Delete"
+      <div
+        className="node-container text-node"
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
+        onPaste={handlePaste}
       >
-        ×
-      </button>
+        <button
+          className="node-close nodrag"
+          onClick={() => deleteNode(id)}
+          title="Delete"
+        >
+          ×
+        </button>
 
-      <textarea
-        className="node-content nodrag nopan"
-        value={nodeData.content || ''}
-        onChange={handleContentChange}
-        placeholder="Type your thoughts..."
-        rows={4}
-        style={{ fontSize: `${defaultFontSize}px` }}
-      />
+        <textarea
+          className="node-content nodrag"
+          value={nodeData.content || ''}
+          onChange={handleContentChange}
+          placeholder="Type your thoughts..."
+          rows={4}
+          style={{ fontSize: `${defaultFontSize}px` }}
+        />
 
-      {nodeData.images && nodeData.images.length > 0 && (
-        <div className="node-images">
-          {nodeData.images.map((img) => (
-            <div key={img.id} className="node-image-thumb">
-              <img src={`/api/image/${img.path}`} alt={img.filename} />
-              <button className="img-remove" onClick={() => removeImage(img.id)}>×</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div onClickCapture={handleSourceHandleClick}>
-        <Handle type="source" position={Position.Bottom} />
+        {nodeData.images && nodeData.images.length > 0 && (
+          <div className="node-images">
+            {nodeData.images.map((img) => (
+              <div key={img.id} className="node-image-thumb">
+                <img src={`/api/image/${img.path}`} alt={img.filename} />
+                <button className="img-remove" onClick={() => removeImage(img.id)}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {menu && <NodeContextMenu nodeId={id} menu={menu} onClose={closeMenu} />}
     </div>
   );
 }

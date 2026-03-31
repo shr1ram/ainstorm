@@ -15,12 +15,24 @@ import { wouldCreateCycle } from '../lib/contextPropagation';
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
+interface HistoryEntry {
+  nodes: Node[];
+  edges: Edge[];
+}
+
+const MAX_HISTORY = 50;
+
 interface AppState {
   nodes: Node[];
   edges: Edge[];
   defaultProvider: AIProvider;
   defaultFontSize: number;
   loaded: boolean;
+  theme: 'light' | 'dark';
+
+  // Undo/redo history
+  history: HistoryEntry[];
+  historyIndex: number;
 
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
@@ -28,14 +40,20 @@ interface AppState {
 
   setDefaultProvider: (p: AIProvider) => void;
   setDefaultFontSize: (size: number) => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
   addTextNode: (position?: { x: number; y: number }) => void;
   addChatNode: (position?: { x: number; y: number }) => void;
   addCodeNode: (position?: { x: number; y: number }) => void;
   addFileNode: (position?: { x: number; y: number }) => void;
   updateNodeData: (nodeId: string, data: Partial<TextBoxData | ChatBotData | FileBoxData>) => void;
+  resizeNode: (nodeId: string, width: number, height: number) => void;
   deleteNode: (nodeId: string) => void;
-  forkNode: (nodeId: string) => void;
+  forkNode: (nodeId: string, forceType?: 'chatBot' | 'codeBox', direction?: 'top' | 'bottom' | 'left' | 'right') => void;
   sendMessage: (nodeId: string, content: string, images?: ImageAttachment[]) => Promise<void>;
+  pushHistory: () => void;
+  undo: () => void;
+  redo: () => void;
 
   loadGraph: () => Promise<void>;
   saveGraph: () => void;
@@ -64,6 +82,9 @@ export const useStore = create<AppState>((set, get) => ({
   defaultProvider: 'claude',
   defaultFontSize: 14,
   loaded: false,
+  theme: (typeof window !== 'undefined' && localStorage.getItem('ainstorm-theme') as 'light' | 'dark') || 'light',
+  history: [],
+  historyIndex: -1,
 
   onNodesChange: (changes) => {
     // Filter out dimension changes from auto-measurement — nodes should only
@@ -93,6 +114,7 @@ export const useStore = create<AppState>((set, get) => ({
     if (wouldCreateCycle(nodes, [...edges, newEdge as Edge], connection.target!, connection.source!)) {
       return; // reject cycles
     }
+    get().pushHistory();
     set({ edges: addEdge(connection, edges) });
     get().debouncedSave();
   },
@@ -100,7 +122,85 @@ export const useStore = create<AppState>((set, get) => ({
   setDefaultProvider: (p) => set({ defaultProvider: p }),
   setDefaultFontSize: (size) => set({ defaultFontSize: size }),
 
+  setTheme: (theme) => {
+    localStorage.setItem('ainstorm-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    set({ theme });
+  },
+
+  toggleTheme: () => {
+    const newTheme = get().theme === 'light' ? 'dark' : 'light';
+    get().setTheme(newTheme);
+  },
+
+  pushHistory: () => {
+    const { nodes, edges, history, historyIndex } = get();
+    const entry: HistoryEntry = {
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+    };
+    // Truncate any future entries if we're not at the end
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(entry);
+    // Keep history bounded
+    if (newHistory.length > MAX_HISTORY) {
+      newHistory.shift();
+      set({ history: newHistory, historyIndex: newHistory.length - 1 });
+    } else {
+      set({ history: newHistory, historyIndex: newHistory.length - 1 });
+    }
+  },
+
+  undo: () => {
+    const { history, historyIndex, nodes, edges } = get();
+    if (historyIndex < 0) return;
+    // If at the tip, save current state so redo can restore it
+    if (historyIndex === history.length - 1) {
+      const current: HistoryEntry = {
+        nodes: JSON.parse(JSON.stringify(nodes)),
+        edges: JSON.parse(JSON.stringify(edges)),
+      };
+      const newHistory = [...history];
+      // Replace tip with current (in case changes happened since last push)
+      newHistory[historyIndex] = current;
+      // Add a "future" entry that redo will use
+      if (historyIndex > 0) {
+        const prev = history[historyIndex - 1];
+        set({
+          nodes: prev.nodes,
+          edges: prev.edges,
+          history: newHistory,
+          historyIndex: historyIndex - 1,
+        });
+        get().debouncedSave();
+        return;
+      }
+    }
+    if (historyIndex > 0) {
+      const prev = history[historyIndex - 1];
+      set({
+        nodes: prev.nodes,
+        edges: prev.edges,
+        historyIndex: historyIndex - 1,
+      });
+      get().debouncedSave();
+    }
+  },
+
+  redo: () => {
+    const { history, historyIndex } = get();
+    if (historyIndex >= history.length - 1) return;
+    const next = history[historyIndex + 1];
+    set({
+      nodes: next.nodes,
+      edges: next.edges,
+      historyIndex: historyIndex + 1,
+    });
+    get().debouncedSave();
+  },
+
   addTextNode: (position) => {
+    get().pushHistory();
     const id = generateId();
     const newNode: Node<TextBoxData> = {
       id,
@@ -114,6 +214,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addChatNode: (position) => {
+    get().pushHistory();
     const id = generateId();
     const { defaultProvider } = get();
     const newNode: Node<ChatBotData> = {
@@ -136,6 +237,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addCodeNode: (position) => {
+    get().pushHistory();
     const id = generateId();
     const { defaultProvider } = get();
     const newNode: Node<ChatBotData> = {
@@ -158,6 +260,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addFileNode: (position) => {
+    get().pushHistory();
     const id = generateId();
     const newNode: Node<FileBoxData> = {
       id,
@@ -179,7 +282,19 @@ export const useStore = create<AppState>((set, get) => ({
     get().debouncedSave();
   },
 
+  resizeNode: (nodeId, width, height) => {
+    set({
+      nodes: get().nodes.map((n) =>
+        n.id === nodeId
+          ? { ...n, style: { ...n.style, width, height } }
+          : n
+      ),
+    });
+    get().debouncedSave();
+  },
+
   deleteNode: (nodeId) => {
+    get().pushHistory();
     set({
       nodes: get().nodes.filter((n) => n.id !== nodeId),
       edges: get().edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
@@ -187,45 +302,91 @@ export const useStore = create<AppState>((set, get) => ({
     get().debouncedSave();
   },
 
-  forkNode: (nodeId) => {
-    const { nodes, edges } = get();
+  forkNode: (nodeId, forceType, direction) => {
+    get().pushHistory();
+    const { nodes, edges, defaultProvider } = get();
     const source = nodes.find((n) => n.id === nodeId);
     if (!source) return;
 
+    const targetType = forceType || source.type!;
     const newId = generateId();
+    const dir = direction || 'bottom';
+
+    let data: Record<string, unknown>;
+    let style: { width: number; height: number };
+
+    if (targetType === 'textBox') {
+      data = { label: 'Text', content: '', images: [] };
+      style = { width: 300, height: 150 };
+    } else if (targetType === 'fileBox') {
+      data = { label: 'Files', files: [] };
+      style = { width: 250, height: 200 };
+    } else if (targetType === 'codeBox') {
+      data = {
+        label: defaultProvider === 'claude' ? 'Claude Code' : 'Codex Code',
+        provider: defaultProvider,
+        model: defaultProvider === 'claude' ? 'claude-sonnet-4-6' : 'o3',
+        mode: 'code',
+        messages: [],
+        isStreaming: false,
+        images: [],
+      };
+      style = { width: 400, height: 450 };
+    } else {
+      // chatBot
+      data = {
+        label: defaultProvider === 'claude' ? 'Claude' : 'Codex',
+        provider: defaultProvider,
+        model: defaultProvider === 'claude' ? 'claude-sonnet-4-6' : 'o3',
+        mode: 'chat',
+        messages: [],
+        isStreaming: false,
+        images: [],
+      };
+      style = { width: 350, height: 400 };
+    }
+
+    // Position the new node based on direction, with a gap
+    const sourceW = (source.style?.width as number) || 300;
+    const sourceH = (source.style?.height as number) || 300;
+    const gap = 80;
+    let newX = source.position?.x || 0;
+    let newY = source.position?.y || 0;
+
+    if (dir === 'right') {
+      newX += sourceW + gap;
+    } else if (dir === 'left') {
+      newX -= style.width + gap;
+    } else if (dir === 'bottom') {
+      newY += sourceH + gap;
+    } else {
+      // top
+      newY -= style.height + gap;
+    }
+
+    // Map direction to handle IDs — source handle on parent, opposite target handle on child
+    const handleMap: Record<string, { sourceHandle: string; targetHandle: string }> = {
+      right:  { sourceHandle: 'right-source', targetHandle: 'left-target' },
+      left:   { sourceHandle: 'left-target',  targetHandle: 'right-source' },
+      bottom: { sourceHandle: 'bottom',       targetHandle: 'top' },
+      top:    { sourceHandle: 'top',          targetHandle: 'bottom' },
+    };
+    const handles = handleMap[dir];
+
     const newNode: Node = {
       id: newId,
-      type: source.type,
-      position: {
-        x: (source.position?.x || 0) + 300,
-        y: (source.position?.y || 0) + 50,
-      },
-      data: source.type === 'textBox'
-        ? { label: 'Text', content: '', images: [] }
-        : source.type === 'fileBox'
-        ? { label: 'Files', files: [] }
-        : {
-            label: (source.data as ChatBotData).label,
-            provider: (source.data as ChatBotData).provider,
-            model: (source.data as ChatBotData).model,
-            mode: (source.data as ChatBotData).mode || (source.type === 'codeBox' ? 'code' : 'chat'),
-            messages: [],
-            isStreaming: false,
-            images: [],
-          },
-      style: source.type === 'textBox'
-        ? { width: 300, height: 150 }
-        : source.type === 'fileBox'
-        ? { width: 250, height: 200 }
-        : source.type === 'codeBox'
-        ? { width: 400, height: 450 }
-        : { width: 350, height: 400 },
+      type: targetType,
+      position: { x: newX, y: newY },
+      data,
+      style,
     };
 
     const newEdge: Edge = {
       id: `edge-${Date.now()}`,
       source: nodeId,
+      sourceHandle: handles.sourceHandle,
       target: newId,
+      targetHandle: handles.targetHandle,
     };
 
     set({
@@ -417,3 +578,4 @@ export const useStore = create<AppState>((set, get) => ({
     }, 500);
   },
 }));
+

@@ -10,22 +10,24 @@ export function Toolbar() {
   const setDefaultProvider = useStore((s) => s.setDefaultProvider);
   const defaultFontSize = useStore((s) => s.defaultFontSize);
   const setDefaultFontSize = useStore((s) => s.setDefaultFontSize);
+  const theme = useStore((s) => s.theme);
+  const toggleTheme = useStore((s) => s.toggleTheme);
 
   return (
     <div className="toolbar">
       <div className="toolbar-title">ainstorm</div>
       <div className="toolbar-buttons">
         <button className="toolbar-btn" onClick={() => addTextNode()}>
-          + Text Box
+          + Text Box<span className="shortcut-hint">T</span>
         </button>
         <button className="toolbar-btn toolbar-btn-chat" onClick={() => addChatNode()}>
-          + Chat Box
+          + Chat Box<span className="shortcut-hint">C</span>
         </button>
         <button className="toolbar-btn toolbar-btn-code" onClick={() => addCodeNode()}>
-          + Code Box
+          + Code Box<span className="shortcut-hint">D</span>
         </button>
         <button className="toolbar-btn toolbar-btn-file" onClick={() => addFileNode()}>
-          + File Box
+          + File Box<span className="shortcut-hint">F</span>
         </button>
       </div>
       <div className="toolbar-provider">
@@ -50,6 +52,13 @@ export function Toolbar() {
         />
         <span>px</span>
       </div>
+      <button
+        className="toolbar-theme-btn"
+        onClick={toggleTheme}
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? '\u263E' : '\u2600'}
+      </button>
     </div>
   );
 }

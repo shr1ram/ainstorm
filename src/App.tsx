@@ -21,25 +21,75 @@ export default function App() {
   const loadGraph = useStore((s) => s.loadGraph);
   const loaded = useStore((s) => s.loaded);
   const deleteNode = useStore((s) => s.deleteNode);
+  const addTextNode = useStore((s) => s.addTextNode);
+  const addChatNode = useStore((s) => s.addChatNode);
+  const addCodeNode = useStore((s) => s.addCodeNode);
+  const addFileNode = useStore((s) => s.addFileNode);
+  const undo = useStore((s) => s.undo);
+  const redo = useStore((s) => s.redo);
+  const theme = useStore((s) => s.theme);
 
   useEffect(() => {
     loadGraph();
   }, [loadGraph]);
 
+  // Apply theme on mount and when it changes
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        // Only delete if not focused on an input/textarea
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const tag = (e.target as HTMLElement).tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      const isMeta = e.metaKey || e.ctrlKey;
 
+      // Undo/redo works globally (even in inputs)
+      if (isMeta && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if (isMeta && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Skip other shortcuts when focused on inputs
+      if (isInput) return;
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         const selectedNodes = nodes.filter((n) => n.selected);
         for (const node of selectedNodes) {
           deleteNode(node.id);
         }
+        return;
+      }
+
+      // Node creation shortcuts (only when not in an input)
+      if (!isMeta && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 't':
+            e.preventDefault();
+            addTextNode();
+            break;
+          case 'c':
+            e.preventDefault();
+            addChatNode();
+            break;
+          case 'd':
+            e.preventDefault();
+            addCodeNode();
+            break;
+          case 'f':
+            e.preventDefault();
+            addFileNode();
+            break;
+        }
       }
     },
-    [nodes, deleteNode]
+    [nodes, deleteNode, addTextNode, addChatNode, addCodeNode, addFileNode, undo, redo]
   );
 
   if (!loaded) {
@@ -69,7 +119,12 @@ export default function App() {
           zoomable
           pannable
         />
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={16}
+          size={1}
+          color={theme === 'dark' ? '#2d2d4e' : undefined}
+        />
       </ReactFlow>
     </div>
   );

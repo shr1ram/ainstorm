@@ -5,16 +5,17 @@ import type { ChatBotData, ImageAttachment } from '../types';
 import { useStore } from '../store/useStore';
 import { uploadImage } from '../lib/api';
 import { getImagesFromClipboard } from '../lib/imageUtils';
+import { NodeContextMenu, useNodeContextMenu } from '../components/NodeContextMenu';
 
 function ChatBotNodeComponent({ id, data }: NodeProps) {
   const nodeData = data as unknown as ChatBotData;
   const updateNodeData = useStore((s) => s.updateNodeData);
   const sendMessage = useStore((s) => s.sendMessage);
   const deleteNode = useStore((s) => s.deleteNode);
-  const forkNode = useStore((s) => s.forkNode);
   const defaultFontSize = useStore((s) => s.defaultFontSize);
   const [input, setInput] = useState('');
   const messagesRef = useRef<HTMLDivElement>(null);
+  const { menu, wrapperRef, closeMenu } = useNodeContextMenu(id);
 
   useEffect(() => {
     const el = messagesRef.current;
@@ -70,77 +71,69 @@ function ChatBotNodeComponent({ id, data }: NodeProps) {
     [handleImageUpload]
   );
 
-  const handleSourceHandleClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.shiftKey) {
-        e.stopPropagation();
-        e.preventDefault();
-        forkNode(id);
-      }
-    },
-    [id, forkNode]
-  );
-
   return (
-    <div className="node-container chat-node">
+    <div className="node-wrapper" ref={wrapperRef}>
       <NodeResizer minWidth={280} minHeight={200} lineClassName="node-resize-line" handleClassName="node-resize-handle" />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} id="top" />
+      <Handle type="target" position={Position.Left} id="left-target" />
+      <Handle type="source" position={Position.Bottom} id="bottom" />
+      <Handle type="source" position={Position.Right} id="right-source" />
 
-      <button
-        className="node-close nodrag"
-        onClick={() => deleteNode(id)}
-        title="Delete"
-      >
-        ×
-      </button>
+      <div className="node-container chat-node">
+        <button
+          className="node-close nodrag"
+          onClick={() => deleteNode(id)}
+          title="Delete"
+        >
+          ×
+        </button>
 
-      <div className="chat-messages nodrag nopan nowheel" ref={messagesRef} style={{ fontSize: `${defaultFontSize}px` }}>
-        {nodeData.messages.length === 0 && (
-          <div className="chat-empty">Send a message to start brainstorming...</div>
-        )}
-        {nodeData.messages.map((msg) => (
-          <div key={msg.id} className={`chat-message chat-${msg.role}`}>
-            <div className="chat-content"><Markdown>{msg.content}</Markdown></div>
-            {msg.images && msg.images.length > 0 && (
-              <div className="chat-images">
-                {msg.images.map((img) => (
-                  <img key={img.id} src={`/api/image/${img.path}`} alt={img.filename} className="chat-img" />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-        {nodeData.isStreaming && (
-          <div className="chat-streaming">Thinking...</div>
-        )}
-      </div>
-
-      {nodeData.images && nodeData.images.length > 0 && (
-        <div className="node-images">
-          {nodeData.images.map((img) => (
-            <div key={img.id} className="node-image-thumb">
-              <img src={`/api/image/${img.path}`} alt={img.filename} />
+        <div className="chat-messages nodrag nowheel" ref={messagesRef} style={{ fontSize: `${defaultFontSize}px` }}>
+          {nodeData.messages.length === 0 && (
+            <div className="chat-empty">Send a message to start brainstorming...</div>
+          )}
+          {nodeData.messages.map((msg) => (
+            <div key={msg.id} className={`chat-message chat-${msg.role}`}>
+              <div className="chat-content"><Markdown>{msg.content}</Markdown></div>
+              {msg.images && msg.images.length > 0 && (
+                <div className="chat-images">
+                  {msg.images.map((img) => (
+                    <img key={img.id} src={`/api/image/${img.path}`} alt={img.filename} className="chat-img" />
+                  ))}
+                </div>
+              )}
             </div>
           ))}
+          {nodeData.isStreaming && (
+            <div className="chat-streaming">Thinking...</div>
+          )}
         </div>
-      )}
 
-      <div className="chat-input-bar nodrag">
-        <textarea
-          className="chat-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
-          rows={2}
-          disabled={nodeData.isStreaming}
-        />
+        {nodeData.images && nodeData.images.length > 0 && (
+          <div className="node-images">
+            {nodeData.images.map((img) => (
+              <div key={img.id} className="node-image-thumb">
+                <img src={`/api/image/${img.path}`} alt={img.filename} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="chat-input-bar nodrag">
+          <textarea
+            className="chat-input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+            rows={2}
+            disabled={nodeData.isStreaming}
+          />
+        </div>
       </div>
 
-      <div onClickCapture={handleSourceHandleClick}>
-        <Handle type="source" position={Position.Bottom} />
-      </div>
+      {menu && <NodeContextMenu nodeId={id} menu={menu} onClose={closeMenu} />}
     </div>
   );
 }

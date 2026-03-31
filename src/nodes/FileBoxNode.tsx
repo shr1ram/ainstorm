@@ -2,13 +2,14 @@ import { memo, useCallback, useRef } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import type { FileBoxData, FileAttachment } from '../types';
 import { useStore } from '../store/useStore';
+import { NodeContextMenu, useNodeContextMenu } from '../components/NodeContextMenu';
 
 function FileBoxNodeComponent({ id, data }: NodeProps) {
   const nodeData = data as unknown as FileBoxData;
   const updateNodeData = useStore((s) => s.updateNodeData);
   const deleteNode = useStore((s) => s.deleteNode);
-  const forkNode = useStore((s) => s.forkNode);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { menu, wrapperRef, closeMenu } = useNodeContextMenu(id);
 
   const handleFileUpload = useCallback(
     async (file: File) => {
@@ -73,97 +74,92 @@ function FileBoxNodeComponent({ id, data }: NodeProps) {
     [id, nodeData.files, updateNodeData]
   );
 
-  const handleSourceHandleClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.shiftKey) {
-        e.stopPropagation();
-        e.preventDefault();
-        forkNode(id);
-      }
-    },
-    [id, forkNode]
-  );
-
   return (
     <div
-      className="node-container file-node"
-      onDrop={handleDrop}
-      onDragOver={(e) => e.preventDefault()}
-      onPaste={handlePaste}
-      tabIndex={0}
+      className="node-wrapper"
+      ref={wrapperRef}
     >
       <NodeResizer minWidth={200} minHeight={100} lineClassName="node-resize-line" handleClassName="node-resize-handle" />
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} id="top" />
+      <Handle type="target" position={Position.Left} id="left-target" />
+      <Handle type="source" position={Position.Bottom} id="bottom" />
+      <Handle type="source" position={Position.Right} id="right-source" />
 
-      <button
-        className="node-close nodrag"
-        onClick={() => deleteNode(id)}
-        title="Delete"
+      <div
+        className="node-container file-node"
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
+        onPaste={handlePaste}
+        tabIndex={0}
       >
-        ×
-      </button>
+        <button
+          className="node-close nodrag"
+          onClick={() => deleteNode(id)}
+          title="Delete"
+        >
+          ×
+        </button>
 
-      <div className="file-list nodrag nopan nowheel">
-        {(!nodeData.files || nodeData.files.length === 0) && (
-          <div
-            className="file-drop-zone"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            Drop or paste files here
-            <span className="file-drop-hint">Images & PDFs</span>
+        <div className="file-list nodrag nowheel">
+          {(!nodeData.files || nodeData.files.length === 0) && (
+            <div
+              className="file-drop-zone"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Drop or paste files here
+              <span className="file-drop-hint">Images & PDFs</span>
+            </div>
+          )}
+          {nodeData.files && nodeData.files.map((file) => (
+            <div key={file.id} className="file-item">
+              {file.type === 'image' ? (
+                <img src={`/api/file/${file.path}`} alt={file.filename} className="file-thumb" />
+              ) : (
+                <div className="file-pdf-icon">PDF</div>
+              )}
+              <div className="file-info">
+                <div className="file-name" title={file.filename}>{file.filename}</div>
+                {file.type === 'pdf' && file.extractedText && (
+                  <div className="file-extracted">
+                    {file.extractedText.length.toLocaleString()} chars extracted
+                  </div>
+                )}
+              </div>
+              <button className="file-remove nodrag" onClick={() => removeFile(file.id)}>×</button>
+            </div>
+          ))}
+        </div>
+
+        {nodeData.files && nodeData.files.length > 0 && (
+          <div className="file-footer">
+            <button
+              className="file-add-btn nodrag"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              + Add file
+            </button>
           </div>
         )}
-        {nodeData.files && nodeData.files.map((file) => (
-          <div key={file.id} className="file-item">
-            {file.type === 'image' ? (
-              <img src={`/api/file/${file.path}`} alt={file.filename} className="file-thumb" />
-            ) : (
-              <div className="file-pdf-icon">PDF</div>
-            )}
-            <div className="file-info">
-              <div className="file-name" title={file.filename}>{file.filename}</div>
-              {file.type === 'pdf' && file.extractedText && (
-                <div className="file-extracted">
-                  {file.extractedText.length.toLocaleString()} chars extracted
-                </div>
-              )}
-            </div>
-            <button className="file-remove nodrag" onClick={() => removeFile(file.id)}>×</button>
-          </div>
-        ))}
-      </div>
 
-      {nodeData.files && nodeData.files.length > 0 && (
-        <div className="file-footer">
-          <button
-            className="file-add-btn nodrag"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            + Add file
-          </button>
-        </div>
-      )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*,.pdf,application/pdf"
-        multiple
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          const files = e.target.files;
-          if (files) {
-            for (let i = 0; i < files.length; i++) {
-              handleFileUpload(files[i]);
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf,application/pdf"
+          multiple
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const files = e.target.files;
+            if (files) {
+              for (let i = 0; i < files.length; i++) {
+                handleFileUpload(files[i]);
+              }
             }
-          }
-          e.target.value = '';
-        }}
-      />
-
-      <div onClickCapture={handleSourceHandleClick}>
-        <Handle type="source" position={Position.Bottom} />
+            e.target.value = '';
+          }}
+        />
       </div>
+
+      {menu && <NodeContextMenu nodeId={id} menu={menu} onClose={closeMenu} />}
     </div>
   );
 }

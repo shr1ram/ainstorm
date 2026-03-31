@@ -1,0 +1,2 @@
+- deleted recently bin + auto clear every 30 days
+- full size when left click box (esc to exit)
